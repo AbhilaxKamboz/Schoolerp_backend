@@ -7,9 +7,13 @@ const routes = require("./routes");
 
 const app = express();   //  EXPRESS APP CREATE
 
+// app.use(cors({
+//   origin:"http://localhost:5173",
+//   credentials:true
+// }));
 app.use(cors({
-  origin:"http://localhost:5173",
-  credentials:true
+  origin: "*",
+  credentials: true
 }));
 // Middleware
 app.use(express.json()); // Read JSON Body
