@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 // Admin Auth
-const { createAdmin, loginUser, createUser, getEnhancedAdminDashboard, getUsers, updateUserStatus, updateUserProfile, changeUserPassword, createClass, getAllClasses, createSubject, getAllSubjects, assignSubjectToClass, getSubjectsByClass, assignStudentToClass, getStudentsByClass, getClassAttendanceReport, getAssignmentPerformance, updateClass, updateClassStatus, updateSubject, updateSubjectStatus, getAvailableClasses, getAdminProfile, updateAdminProfile, changeAdminPassword, updateSubjectAssignment, deleteSubjectAssignment, getAllTeachers } = require("./auth");
+const { createAdmin, loginUser, createUser, getEnhancedAdminDashboard, getUsers, updateUserStatus, updateUserProfile, changeUserPassword, createClass, getAllClasses, createSubject, getAllSubjects, assignSubjectToClass, getSubjectsByClass, assignStudentToClass, getStudentsByClass, getClassAttendanceReport, getAssignmentPerformance, updateClass, updateClassStatus, updateSubject, updateSubjectStatus, getAvailableClasses, getAdminProfile, updateAdminProfile, changeAdminPassword, updateSubjectAssignment, deleteSubjectAssignment, getAllTeachers, getUserDetails } = require("./auth");
 
 // Teacher Auth
 const {getTeacherAssignments, markAttendance, getAttendanceByClass, editAttendance, createAssignment, checkAssignment, getStudentsOfClass, getAssignmentSubmissions, getAssignments, updateAssignment, deleteAssignment, getStudentAttendance, getStudentSubmissions, getTeacherProfile, updateTeacherProfile, changeTeacherPassword,  getTeacherClassesSubjects, createTest, getTests, getStudentsForMarks, saveMarks, getTestMarks, updateTest, deleteTest } = require("./teacher_auth");
@@ -77,6 +77,9 @@ router.put("/admin/change-password", roleAuth(["admin"]), changeAdminPassword);
 router.get("/admin/teachers", roleAuth(["admin"]), getAllTeachers);
 router.put("/admin/class-subject/:id", roleAuth(["admin"]), updateSubjectAssignment);
 router.delete("/admin/class-subject/:id", roleAuth(["admin"]), deleteSubjectAssignment);
+//Get one user all detils
+// Add this route with other admin user routes
+router.get("/admin/user/:id", roleAuth(["admin"]), getUserDetails);
 
 /* TEACHER ROUTES  */
 

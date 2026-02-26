@@ -864,5 +864,44 @@ const getAllTeachers = async (req, res) => {
   }
 };
 
+// One User all Details
+const getUserDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id)
+      .select("-password")
+      .populate({
+        path: "createdBy",
+        select: "name email"
+      });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // For students, get class information
+    let classInfo = null;
+    if (user.role === "student") {
+      const classStudent = await ClassStudent.findOne({ 
+        studentId: id, 
+        isActive: true 
+      }).populate("classId", "className section classTeacher");
+      
+      if (classStudent) {
+        classInfo = classStudent.classId;
+      }
+    }
+
+    res.json({
+      user,
+      classInfo
+    });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = { createAdmin, loginUser, createUser, getUsers, updateUserStatus, updateUserProfile, changeUserPassword, createClass, getAllClasses, createSubject, getAllSubjects, assignSubjectToClass, getSubjectsByClass, assignStudentToClass, getStudentsByClass, getClassAttendanceReport, getAssignmentPerformance, updateClass, updateClassStatus, updateSubject, updateSubjectStatus, getAvailableClasses, getAdminProfile, updateAdminProfile, changeAdminPassword,
-getEnhancedAdminDashboard, updateSubjectAssignment, deleteSubjectAssignment, getAllTeachers };
+getEnhancedAdminDashboard, updateSubjectAssignment, deleteSubjectAssignment, getAllTeachers, getUserDetails };
