@@ -850,7 +850,7 @@ const deleteSubjectAssignment = async (req, res) => {
   }
 };
 
-// Add to auth.js - Get All Teachers for Dropdown (already exists but ensure this)
+// Add to auth.js - Get All Teachers for Dropdown 
 const getAllTeachers = async (req, res) => {
   try {
     const teachers = await User.find({ 
@@ -864,7 +864,7 @@ const getAllTeachers = async (req, res) => {
   }
 };
 
-// One User all Details
+// Add to auth.js - Get Single User Details
 const getUserDetails = async (req, res) => {
   try {
     const { id } = req.params;

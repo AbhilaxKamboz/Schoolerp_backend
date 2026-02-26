@@ -68,7 +68,7 @@ router.put("/admin/class/:id", roleAuth(["admin"]), updateClass);
 router.put("/admin/class/status/:id", roleAuth(["admin"]), updateClassStatus);
 router.put("/admin/subject/:id", roleAuth(["admin"]), updateSubject);
 router.put("/admin/subject/status/:id", roleAuth(["admin"]), updateSubjectStatus);
-router.get("/admin/available-classes", roleAuth(["admin"]), getAvailableClasses);
+router.get("/admin/available-classes", roleAuth(["admin","accountant"]), getAvailableClasses);
 // Admin Profile Routes
 router.get("/admin/profile", roleAuth(["admin"]), getAdminProfile);
 router.put("/admin/profile", roleAuth(["admin"]), updateAdminProfile);
@@ -77,8 +77,8 @@ router.put("/admin/change-password", roleAuth(["admin"]), changeAdminPassword);
 router.get("/admin/teachers", roleAuth(["admin"]), getAllTeachers);
 router.put("/admin/class-subject/:id", roleAuth(["admin"]), updateSubjectAssignment);
 router.delete("/admin/class-subject/:id", roleAuth(["admin"]), deleteSubjectAssignment);
-//Get one user all detils
-// Add this route with other admin user routes
+
+// get one user details 
 router.get("/admin/user/:id", roleAuth(["admin"]), getUserDetails);
 
 /* TEACHER ROUTES  */
