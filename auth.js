@@ -61,12 +61,13 @@ const loginUser = async (req, res) => {
   }
 };
 
-// Create User (Common for all roles) - FIXED VERSION
+// Create User (Common for all roles)
 const createUser = async (req, res) => {
   try {
     const {
       name, email, password, role, gender, subject, assignedClass, 
-      className: reqClassName, section: reqSection, rollNo, admissionNo, Dob, classId
+      className: reqClassName, section: reqSection, rollNo, admissionNo, 
+      Dob, classId, qualification, employeeId, joiningDate 
     } = req.body;
 
     // 1. Basic validation
@@ -93,7 +94,7 @@ const createUser = async (req, res) => {
     let className = reqClassName;
     let section = reqSection;
 
-    // Student validation - check for classId instead of className/section
+    // Student validation
     if (role === "student") {
       if (!classId || !rollNo || !admissionNo) {
         return res.status(400).json({
@@ -101,7 +102,6 @@ const createUser = async (req, res) => {
         });
       }
       
-      // Get class details to populate className and section
       const classData = await Class.findById(classId);
       if (!classData) {
         return res.status(400).json({
@@ -109,7 +109,6 @@ const createUser = async (req, res) => {
         });
       }
       
-      // Set className and section from the class data
       className = classData.className;
       section = classData.section;
     }
@@ -119,8 +118,19 @@ const createUser = async (req, res) => {
 
     // 5. Create user object
     const userData = {
-      name, email, password: hashedPassword, role,
-      isActive: true, gender, Dob, createdBy: req.user.id
+      name, 
+      email, 
+      password: hashedPassword, 
+      role,
+      isActive: true, 
+      gender, 
+      Dob, 
+      createdBy: req.user.id,
+      
+      // Common fields for all staff (teacher, librarian, accountant etc.)
+      qualification: qualification || undefined,
+      employeeId: employeeId || undefined,
+      joiningDate: joiningDate || undefined
     };
 
     // 6. Attach role-specific fields
@@ -189,7 +199,7 @@ const getUsers = async (req, res) => {
     if (isActive !== undefined) filter.isActive = isActive === "true";
 
     const users = await User.find(filter)
-      .select("-password")
+      .select("-password") 
       .sort({ createdAt: -1 });
 
     res.json({
@@ -252,13 +262,23 @@ const updateUserProfile = async (req, res) => {
       className,
       section,
       rollNo,
-      admissionNo
+      admissionNo,
+      
+      // common fields
+      qualification,
+      employeeId,
+      joiningDate
     } = req.body;
 
     // Common fields
     if (name) user.name = name;
     if (gender) user.gender = gender;
     if (Dob) user.Dob = Dob;
+
+    //  common fields
+    if (qualification !== undefined) user.qualification = qualification;
+    if (employeeId !== undefined) user.employeeId = employeeId;
+    if (joiningDate !== undefined) user.joiningDate = joiningDate;
 
     // Role-based updates
     if (user.role === "teacher") {
@@ -864,13 +884,12 @@ const getAllTeachers = async (req, res) => {
   }
 };
 
-// Add to auth.js - Get Single User Details
+// Get Single User Details
 const getUserDetails = async (req, res) => {
   try {
     const { id } = req.params;
 
     const user = await User.findById(id)
-      .select("-password")
       .populate({
         path: "createdBy",
         select: "name email"
@@ -903,5 +922,70 @@ const getUserDetails = async (req, res) => {
   }
 };
 
+// Pagination
+// Get Users Advanced with Pagination and Filters
+const getUsersAdvanced = async (req, res) => {
+  try {
+    const { 
+      role, 
+      isActive, 
+      search, 
+      page = 1, 
+      limit = 10,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    let filter = {};
+
+    // Role filter
+    if (role) filter.role = role;
+    
+    // Status filter
+    if (isActive !== undefined && isActive !== '') {
+      filter.isActive = isActive === 'true';
+    }
+
+    // Search filter (name, email, employeeId, etc.)
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { employeeId: { $regex: search, $options: 'i' } },
+        { admissionNo: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Sorting
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Execute queries
+    const users = await User.find(filter)
+      .select("-password") // Password exclude karo
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .populate("createdBy", "name email");
+
+    const total = await User.countDocuments(filter);
+
+    res.json({
+      users,
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(total / parseInt(limit))
+    });
+
+  } catch (error) {
+    console.error("Error fetching users advanced:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = { createAdmin, loginUser, createUser, getUsers, updateUserStatus, updateUserProfile, changeUserPassword, createClass, getAllClasses, createSubject, getAllSubjects, assignSubjectToClass, getSubjectsByClass, assignStudentToClass, getStudentsByClass, getClassAttendanceReport, getAssignmentPerformance, updateClass, updateClassStatus, updateSubject, updateSubjectStatus, getAvailableClasses, getAdminProfile, updateAdminProfile, changeAdminPassword,
-getEnhancedAdminDashboard, updateSubjectAssignment, deleteSubjectAssignment, getAllTeachers, getUserDetails };
+getEnhancedAdminDashboard, updateSubjectAssignment, deleteSubjectAssignment, getAllTeachers, getUserDetails, getUsersAdvanced };

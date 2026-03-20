@@ -405,7 +405,7 @@ const getTeacherProfile = async (req, res) => {
 const updateTeacherProfile = async (req, res) => {
   try {
     const teacherId = req.user.id;
-    const { name, gender, Dob, subject, assignedClass } = req.body;
+    const { name, gender, Dob, subject, assignedClass, qualification, joiningDate } = req.body;
 
     const teacher = await User.findById(teacherId);
 
@@ -418,45 +418,12 @@ const updateTeacherProfile = async (req, res) => {
     if (Dob) teacher.Dob = Dob;
     if (subject) teacher.subject = subject;
     if (assignedClass) teacher.assignedClass = assignedClass;
+    if (qualification !== undefined) teacher.qualification = qualification;
+    if (joiningDate !== undefined) teacher.joiningDate = joiningDate;  
 
     await teacher.save();
 
     res.json({ message: "Profile updated successfully", user: teacher });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Change teacher password
-const changeTeacherPassword = async (req, res) => {
-  try {
-    const teacherId = req.user.id;
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
-    }
-
-    const teacher = await User.findById(teacherId);
-
-    if (!teacher) {
-      return res.status(404).json({ message: "Teacher not found" });
-    }
-
-    const isMatch = await bcrypt.compare(currentPassword, teacher.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Current password is incorrect" });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    teacher.password = hashedPassword;
-    await teacher.save();
-
-    res.json({ message: "Password changed successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
@@ -714,4 +681,4 @@ const deleteTest = async (req, res) => {
   }
 };
 
-module.exports = { getTeacherAssignments, markAttendance, getAttendanceByClass, editAttendance, createAssignment, checkAssignment, getStudentsOfClass, getAssignmentSubmissions, getAssignments, updateAssignment, deleteAssignment, getStudentAttendance, getStudentSubmissions, getTeacherProfile, updateTeacherProfile, changeTeacherPassword, getTeacherClassesSubjects, createTest, getTests, getStudentsForMarks, saveMarks, getTestMarks, updateTest, deleteTest };
+module.exports = { getTeacherAssignments, markAttendance, getAttendanceByClass, editAttendance, createAssignment, checkAssignment, getStudentsOfClass, getAssignmentSubmissions, getAssignments, updateAssignment, deleteAssignment, getStudentAttendance, getStudentSubmissions, getTeacherProfile, updateTeacherProfile, getTeacherClassesSubjects, createTest, getTests, getStudentsForMarks, saveMarks, getTestMarks, updateTest, deleteTest };

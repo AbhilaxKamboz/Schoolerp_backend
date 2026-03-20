@@ -631,43 +631,6 @@ const updateAccountantProfile = async (req, res) => {
   }
 };
 
-/* Change Accountant Password */
-const changeAccountantPassword = async (req, res) => {
-  try {
-    const accountantId = req.user.id;
-    const { currentPassword, newPassword } = req.body;
-    
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-    
-    if (newPassword.length < 6) {
-      return res.status(400).json({ 
-        message: "Password must be at least 6 characters" 
-      });
-    }
-    
-    const accountant = await User.findById(accountantId);
-    
-    if (!accountant) {
-      return res.status(404).json({ message: "Accountant not found" });
-    }
-    
-    const isMatch = await bcrypt.compare(currentPassword, accountant.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Current password is incorrect" });
-    }
-    
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    accountant.password = hashedPassword;
-    await accountant.save();
-    
-    res.json({ message: "Password changed successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
 /*  HELPER FUNCTIONS  */
 
 /* Get All Classes (for dropdown)*/
@@ -724,7 +687,6 @@ module.exports = {
   // Profile
   getAccountantProfile,
   updateAccountantProfile,
-  changeAccountantPassword,
   
   // Helpers
   getClasses,

@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "teacher", "student", "accountant"],
+      enum: ["admin", "teacher", "student", "accountant", "librarian"],
       default: "admin"
     },
     isActive: {
@@ -26,18 +26,29 @@ const userSchema = new mongoose.Schema(
       default: true
     },
     gender: String,
-    //Teacher Fields
+    
+    // Teacher Fields
     subject: String,
     assignedClass: String,
 
-    //Student Fields
+    // Student Fields
     className: String,
     section: String,
     rollNo: String,
     admissionNo: {
       type: String,
-      unique: true
+      unique: true,
+      sparse: true
     },
+
+    // Common Fields for Teacher & Librarian (and other staff)
+    qualification: String,
+    employeeId: {
+      type: String,
+      unique: true,
+      sparse: true
+    },
+    joiningDate: Date,
 
     // Default
     Dob:{
@@ -626,4 +637,183 @@ const feePaymentSchema = new mongoose.Schema(
 
 const FeePayment = mongoose.model("FeePayment", feePaymentSchema);
 
-module.exports = { User, Class, Subject, ClassSubject, ClassStudent, Attendance, Homework, Assignment, AssignmentSubmission, FeeStructure, StudentFee, FeePayment, Marks, StudentMarks };
+// Book Schema
+const bookSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true
+    },
+    author: {
+      type: String,
+      required: true
+    },
+    isbn: {
+      type: String,
+      required: true,
+      unique: true
+    },
+    publisher: String,
+    publicationYear: Number,
+    category: {
+      type: String,
+      enum: ["Textbook", "Reference", "Fiction", "Non-Fiction", "Magazine", "Other"],
+      default: "Other"
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 1
+    },
+    availableQuantity: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 1
+    },
+    shelfLocation: String,
+    description: String,
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    }
+  },
+  { timestamps: true }
+);
+
+const Book = mongoose.model("Book", bookSchema);
+
+// Book Issue Schema
+const bookIssueSchema = new mongoose.Schema(
+  {
+    bookId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Book",
+      required: true
+    },
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+    issuedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+    issueDate: {
+      type: Date,
+      default: Date.now,
+      required: true
+    },
+    dueDate: {
+      type: Date,
+      required: true
+    },
+    returnDate: {
+      type: Date
+    },
+    status: {
+      type: String,
+      enum: ["issued", "returned", "overdue", "lost"],
+      default: "issued"
+    },
+    fineAmount: {
+      type: Number,
+      default: 0
+    },
+    finePaid: {
+      type: Boolean,
+      default: false
+    },
+    remarks: String,
+    isActive: {
+      type: Boolean,
+      default: true
+    }
+  },
+  { timestamps: true }
+);
+
+bookIssueSchema.index(
+  { bookId: 1, studentId: 1, status: 1 },
+  { unique: true, partialFilterExpression: { status: "issued" } }
+);
+
+const BookIssue = mongoose.model("BookIssue", bookIssueSchema);
+
+// Library Settings Schema
+const librarySettingsSchema = new mongoose.Schema(
+  {
+    maxBooksPerStudent: {
+      type: Number,
+      default: 3
+    },
+    loanPeriodDays: {
+      type: Number,
+      default: 14
+    },
+    finePerDay: {
+      type: Number,
+      default: 5
+    },
+    allowRenewals: {
+      type: Boolean,
+      default: true
+    },
+    maxRenewals: {
+      type: Number,
+      default: 2
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    }
+  },
+  { timestamps: true }
+);
+
+const LibrarySettings = mongoose.model("LibrarySettings", librarySettingsSchema);
+
+// Library Transaction History
+const libraryHistorySchema = new mongoose.Schema(
+  {
+    bookId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Book",
+      required: true
+    },
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+    librarianId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+    action: {
+      type: String,
+      enum: ["issued", "returned", "renewed", "lost"],
+      required: true
+    },
+    issueDate: Date,
+    dueDate: Date,
+    returnDate: Date,
+    fineAmount: Number,
+    remarks: String
+  },
+  { timestamps: true }
+);
+
+const LibraryHistory = mongoose.model("LibraryHistory", libraryHistorySchema);
+
+module.exports = { User, Class, Subject, ClassSubject, ClassStudent, Attendance, Homework, Assignment, AssignmentSubmission, FeeStructure, StudentFee, FeePayment, Marks, StudentMarks,Book, BookIssue, LibrarySettings, LibraryHistory  };

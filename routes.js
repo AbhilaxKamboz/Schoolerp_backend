@@ -1,20 +1,25 @@
 const express = require("express");
 const router = express.Router();
 // Admin Auth
-const { createAdmin, loginUser, createUser, getEnhancedAdminDashboard, getUsers, updateUserStatus, updateUserProfile, changeUserPassword, createClass, getAllClasses, createSubject, getAllSubjects, assignSubjectToClass, getSubjectsByClass, assignStudentToClass, getStudentsByClass, getClassAttendanceReport, getAssignmentPerformance, updateClass, updateClassStatus, updateSubject, updateSubjectStatus, getAvailableClasses, getAdminProfile, updateAdminProfile, changeAdminPassword, updateSubjectAssignment, deleteSubjectAssignment, getAllTeachers, getUserDetails } = require("./auth");
+const { createAdmin, loginUser, createUser, getEnhancedAdminDashboard, getUsers, updateUserStatus, updateUserProfile, changeUserPassword, createClass, getAllClasses, createSubject, getAllSubjects, assignSubjectToClass, getSubjectsByClass, assignStudentToClass, getStudentsByClass, getClassAttendanceReport, getAssignmentPerformance, updateClass, updateClassStatus, updateSubject, updateSubjectStatus, getAvailableClasses, getAdminProfile, updateAdminProfile, changeAdminPassword, updateSubjectAssignment, deleteSubjectAssignment, getAllTeachers, getUserDetails, getUsersAdvanced } = require("./auth");
 
 // Teacher Auth
-const {getTeacherAssignments, markAttendance, getAttendanceByClass, editAttendance, createAssignment, checkAssignment, getStudentsOfClass, getAssignmentSubmissions, getAssignments, updateAssignment, deleteAssignment, getStudentAttendance, getStudentSubmissions, getTeacherProfile, updateTeacherProfile, changeTeacherPassword,  getTeacherClassesSubjects, createTest, getTests, getStudentsForMarks, saveMarks, getTestMarks, updateTest, deleteTest } = require("./teacher_auth");
+const {getTeacherAssignments, markAttendance, getAttendanceByClass, editAttendance, createAssignment, checkAssignment, getStudentsOfClass, getAssignmentSubmissions, getAssignments, updateAssignment, deleteAssignment, getStudentAttendance, getStudentSubmissions, getTeacherProfile, updateTeacherProfile, getTeacherClassesSubjects, createTest, getTests, getStudentsForMarks, saveMarks, getTestMarks, updateTest, deleteTest } = require("./teacher_auth");
 
 //Student Auth
 const { submitAssignment, getMyClass, getMySubjects, getMyAttendance, getStudentAttendanceSummary, getMyAssignments, getMySubmissions, getStudentProfile, updateStudentProfile, changeStudentPassword,
-  getStudentDashboard, getMyFees, getMyAssignmentMarks, getMyTestMarks } = require("./student_auth");
+  getStudentDashboard, getMyFees, getMyAssignmentMarks, getMyTestMarks, getMyIssuedBooks, getMyBookIssueDetails, getLibraryRules } = require("./student_auth");
 
 const { 
   createFeeStructure, getFeeStructures, updateFeeStructure, deleteFeeStructure, assignFeeToStudent, 
   getStudentFees, getStudentFeeDetails, receiveFeePayment, getPaymentHistory, getFeeStatistics,
-  getDueFees, getFeeReport, getAccountantProfile, updateAccountantProfile, changeAccountantPassword, getClasses, getStudentsByClassaccount
+  getDueFees, getFeeReport, getAccountantProfile, updateAccountantProfile, getClasses, getStudentsByClassaccount
 } = require("./accountant_auth");
+
+// Librarian Auth
+const {
+  getLibrarianProfile, updateLibrarianProfile, changeLibrarianPassword, getBooks, getBookDetails, createBook, updateBook, deleteBook, issueBook, returnBook, getIssuedBooks, getStudentBookHistory, getLibrarySettings, updateLibrarySettings, getLibraryStatistics, getStudents
+} = require("./library_auth");
 
 // Middleware
 const {roleAuth }=require("./middleware");
@@ -81,6 +86,9 @@ router.delete("/admin/class-subject/:id", roleAuth(["admin"]), deleteSubjectAssi
 // get one user details 
 router.get("/admin/user/:id", roleAuth(["admin"]), getUserDetails);
 
+//Pagination
+router.get("/admin/users/advanced", roleAuth(["admin"]), getUsersAdvanced);
+
 /* TEACHER ROUTES  */
 
 // Teacher assignments (classes they teach)
@@ -117,7 +125,6 @@ router.delete("/teacher/test/:id", roleAuth(["teacher"]), deleteTest);
 // Teacher profile
 router.get("/teacher/profile", roleAuth(["teacher"]), getTeacherProfile);
 router.put("/teacher/profile", roleAuth(["teacher"]), updateTeacherProfile);
-router.put("/teacher/change-password", roleAuth(["teacher"]), changeTeacherPassword);
 
 /* STUDENT ROUTES  */
 
@@ -149,6 +156,11 @@ router.get("/student/test-marks", roleAuth(["student"]), getMyTestMarks);
 // Fees
 router.get("/student/my-fees", roleAuth(["student"]), getMyFees);
 
+// Library
+router.get("/student/my-books", roleAuth(["student"]), getMyIssuedBooks);
+router.get("/student/book-issue/:issueId", roleAuth(["student"]), getMyBookIssueDetails);
+router.get("/student/library-rules", roleAuth(["student"]), getLibraryRules);
+
 /*  ACCOUNTANT ROUTES  */
 
 // Dashboard & Statistics
@@ -176,10 +188,37 @@ router.get("/accountant/fee-report", roleAuth(["accountant"]), getFeeReport);
 // Profile Management
 router.get("/accountant/profile", roleAuth(["accountant"]), getAccountantProfile);
 router.put("/accountant/profile", roleAuth(["accountant"]), updateAccountantProfile);
-router.put("/accountant/change-password", roleAuth(["accountant"]), changeAccountantPassword);
 
 // Helper Routes (Dropdowns)
 router.get("/accountant/classes", roleAuth(["accountant"]), getClasses);
 router.get("/accountant/class/:classId/students", roleAuth(["accountant"]), getStudentsByClassaccount);
+
+/* LIBRARIAN ROUTES */
+
+// Profile Management
+router.get("/librarian/profile", roleAuth(["librarian"]), getLibrarianProfile);
+router.put("/librarian/profile", roleAuth(["librarian"]), updateLibrarianProfile);
+router.put("/librarian/change-password", roleAuth(["librarian"]), changeLibrarianPassword);
+
+// Book Management
+router.get("/librarian/books", roleAuth(["librarian"]), getBooks);
+router.get("/librarian/books/:id", roleAuth(["librarian"]), getBookDetails);
+router.post("/librarian/books", roleAuth(["librarian"]), createBook);
+router.put("/librarian/books/:id", roleAuth(["librarian"]), updateBook);
+router.delete("/librarian/books/:id", roleAuth(["librarian"]), deleteBook);
+
+// Book Issue Management
+router.post("/librarian/issue", roleAuth(["librarian"]), issueBook);
+router.put("/librarian/return/:issueId", roleAuth(["librarian"]), returnBook);
+router.get("/librarian/issues", roleAuth(["librarian"]), getIssuedBooks);
+router.get("/librarian/student/:studentId/history", roleAuth(["librarian"]), getStudentBookHistory);
+
+// Library Settings
+router.get("/librarian/settings", roleAuth(["librarian"]), getLibrarySettings);
+router.put("/librarian/settings", roleAuth(["librarian"]), updateLibrarySettings);
+
+// Statistics & Helpers
+router.get("/librarian/dashboard", roleAuth(["librarian"]), getLibraryStatistics);
+router.get("/librarian/students", roleAuth(["librarian"]), getStudents);
 
 module.exports = router;

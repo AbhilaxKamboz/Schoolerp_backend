@@ -1,9 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { 
-  ClassSubject, AssignmentSubmission, Assignment, 
-  ClassStudent, Attendance, User, Marks, StudentMarks,
-  FeeStructure, StudentFee 
+  ClassSubject, AssignmentSubmission, Assignment, ClassStudent, Attendance, User, Marks, StudentMarks, FeeStructure, StudentFee, BookIssue, Book, LibrarySettings 
 } = require("./models");
 
 // Student View their class
@@ -617,9 +615,132 @@ const getMyFees = async (req, res) => {
   }
 };
 
-module.exports = { 
-  getMyClass, getMySubjects, getMyAttendance, getStudentAttendanceSummary,
-  getMyAssignments, submitAssignment, getMySubmissions, getMyAssignmentMarks,
-  getMyTestMarks, getStudentProfile, updateStudentProfile, changeStudentPassword,
-  getStudentDashboard, getMyFees
+// STUDENT LIBRARY FUNCTIONS
+
+// Get student issued books
+const getMyIssuedBooks = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    // Get all issued books for this student
+    const issuedBooks = await BookIssue.find({ 
+      studentId,
+      status: { $in: ["issued", "overdue"] }
+    })
+      .populate("bookId", "title author isbn category")
+      .populate("issuedBy", "name")
+      .sort({ dueDate: 1 });
+
+    // Calculate fines for overdue books
+    const settings = await LibrarySettings.findOne() || { finePerDay: 5 };
+    const now = new Date();
+    
+    const booksWithDetails = issuedBooks.map(issue => {
+      const isOverdue = issue.status === "overdue" || 
+        (issue.status === "issued" && new Date(issue.dueDate) < now);
+      
+      let fine = 0;
+      if (isOverdue) {
+        const daysLate = Math.ceil((now - new Date(issue.dueDate)) / (1000 * 60 * 60 * 24));
+        fine = daysLate * settings.finePerDay;
+      }
+
+      return {
+        ...issue.toObject(),
+        isOverdue,
+        calculatedFine: fine,
+        status: isOverdue ? "overdue" : issue.status
+      };
+    });
+
+    // Get book history (returned books)
+    const history = await BookIssue.find({ 
+      studentId,
+      status: "returned"
+    })
+      .populate("bookId", "title author")
+      .sort({ returnDate: -1 })
+      .limit(10);
+
+    // Calculate statistics
+    const stats = {
+      totalIssued: issuedBooks.length,
+      currentlyIssued: issuedBooks.filter(i => i.status === "issued" && new Date(i.dueDate) >= now).length,
+      overdue: booksWithDetails.filter(b => b.isOverdue).length,
+      totalFine: booksWithDetails.reduce((sum, b) => sum + b.calculatedFine, 0)
+    };
+
+    res.json({
+      stats,
+      currentIssues: booksWithDetails,
+      history
+    });
+  } catch (error) {
+    console.error("Error fetching issued books:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
+
+// Get single book issue details
+const getMyBookIssueDetails = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const { issueId } = req.params;
+
+    const issue = await BookIssue.findOne({ 
+      _id: issueId,
+      studentId 
+    })
+      .populate("bookId", "title author isbn publisher description")
+      .populate("issuedBy", "name");
+
+    if (!issue) {
+      return res.status(404).json({ message: "Book issue record not found" });
+    }
+
+    // Calculate fine if overdue
+    const settings = await LibrarySettings.findOne() || { finePerDay: 5 };
+    const now = new Date();
+    let fine = 0;
+    
+    if (issue.status === "issued" && new Date(issue.dueDate) < now) {
+      const daysLate = Math.ceil((now - new Date(issue.dueDate)) / (1000 * 60 * 60 * 24));
+      fine = daysLate * settings.finePerDay;
+    }
+
+    res.json({
+      issue,
+      calculatedFine: fine,
+      isOverdue: fine > 0
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get library settings/ rules for students
+const getLibraryRules = async (req, res) => {
+  try {
+    const settings = await LibrarySettings.findOne();
+    
+    if (!settings) {
+      return res.json({
+        maxBooksPerStudent: 3,
+        loanPeriodDays: 14,
+        finePerDay: 5
+      });
+    }
+
+    res.json({
+      maxBooksPerStudent: settings.maxBooksPerStudent,
+      loanPeriodDays: settings.loanPeriodDays,
+      finePerDay: settings.finePerDay
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+module.exports = { 
+  getMyClass, getMySubjects, getMyAttendance, getStudentAttendanceSummary, getMyAssignments, submitAssignment, getMySubmissions, getMyAssignmentMarks, getMyTestMarks, getStudentProfile, updateStudentProfile, changeStudentPassword, getStudentDashboard, getMyFees,  getMyIssuedBooks, getMyBookIssueDetails, getLibraryRules };
