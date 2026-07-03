@@ -816,4 +816,32 @@ const libraryHistorySchema = new mongoose.Schema(
 
 const LibraryHistory = mongoose.model("LibraryHistory", libraryHistorySchema);
 
-module.exports = { User, Class, Subject, ClassSubject, ClassStudent, Attendance, Homework, Assignment, AssignmentSubmission, FeeStructure, StudentFee, FeePayment, Marks, StudentMarks,Book, BookIssue, LibrarySettings, LibraryHistory  };
+// AI chat message schema
+const aiChatSchema = new mongoose.Schema({
+
+    userId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"User"
+    },
+
+    role:{
+        type:String
+    },
+
+    userMessage:{
+        type:String
+    },
+
+    aiReply:{
+        type:String
+    }
+
+},
+{
+    timestamps:true
+});
+
+const AIChat = mongoose.model("AIChat", aiChatSchema);
+
+
+module.exports = { User, Class, Subject, ClassSubject, ClassStudent, Attendance, Homework, Assignment, AssignmentSubmission, FeeStructure, StudentFee, FeePayment, Marks, StudentMarks,Book, BookIssue, LibrarySettings, LibraryHistory, AIChat  };

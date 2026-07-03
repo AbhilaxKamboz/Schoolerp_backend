@@ -10,6 +10,7 @@ const {getTeacherAssignments, markAttendance, getAttendanceByClass, editAttendan
 const { submitAssignment, getMyClass, getMySubjects, getMyAttendance, getStudentAttendanceSummary, getMyAssignments, getMySubmissions, getStudentProfile, updateStudentProfile, changeStudentPassword,
   getStudentDashboard, getMyFees, getMyAssignmentMarks, getMyTestMarks, getMyIssuedBooks, getMyBookIssueDetails, getLibraryRules } = require("./student_auth");
 
+// Accountant Auth
 const { 
   createFeeStructure, getFeeStructures, updateFeeStructure, deleteFeeStructure, assignFeeToStudent, 
   getStudentFees, getStudentFeeDetails, receiveFeePayment, getPaymentHistory, getFeeStatistics,
@@ -20,6 +21,8 @@ const {
 const {
   getLibrarianProfile, updateLibrarianProfile, changeLibrarianPassword, getBooks, getBookDetails, createBook, updateBook, deleteBook, issueBook, returnBook, getIssuedBooks, getStudentBookHistory, getLibrarySettings, updateLibrarySettings, getLibraryStatistics, getStudents
 } = require("./library_auth");
+
+const {chatWithAI, getChatHistory} = require("./ai_auth");
 
 // Middleware
 const {roleAuth }=require("./middleware");
@@ -220,5 +223,10 @@ router.put("/librarian/settings", roleAuth(["librarian"]), updateLibrarySettings
 // Statistics & Helpers
 router.get("/librarian/dashboard", roleAuth(["librarian"]), getLibraryStatistics);
 router.get("/librarian/students", roleAuth(["librarian"]), getStudents);
+
+// AI Routes
+router.post("/ai/chat",  roleAuth(["admin","teacher","student","accountant","librarian"]), chatWithAI);
+router.get("/ai/history",  roleAuth(["admin","teacher","student","accountant","librarian"]), getChatHistory);
+
 
 module.exports = router;
