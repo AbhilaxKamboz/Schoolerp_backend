@@ -253,17 +253,14 @@ const updateUserProfile = async (req, res) => {
       name,
       gender,
       Dob,
-
       // teacher
       subject,
       assignedClass,
-
       // student
       className,
       section,
       rollNo,
       admissionNo,
-      
       // common fields
       qualification,
       employeeId,
